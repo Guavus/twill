@@ -23,8 +23,9 @@ import com.google.common.collect.ImmutableList;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.hdfs.DFSUtil;
+import org.apache.hadoop.hdfs.DFSUtilClient;
 import org.apache.hadoop.hdfs.HAUtil;
+import org.apache.hadoop.hdfs.HAUtilClient;
 import org.apache.hadoop.io.DataInputByteBuffer;
 import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.security.Credentials;
@@ -35,6 +36,7 @@ import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.LocalResourceType;
 import org.apache.hadoop.yarn.api.records.LocalResourceVisibility;
 import org.apache.hadoop.yarn.api.records.Resource;
+import org.apache.hadoop.yarn.api.records.URL;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
@@ -81,7 +83,7 @@ public class YarnUtils {
 
     YarnLocalResource resource = createAdapter(YarnLocalResource.class);
     resource.setVisibility(LocalResourceVisibility.APPLICATION);
-    resource.setResource(ConverterUtils.getYarnUrlFromURI(localFile.getURI()));
+    resource.setResource(URL.fromURI(localFile.getURI()));
     resource.setTimestamp(localFile.getLastModified());
     resource.setSize(localFile.getSize());
     return setLocalResourceType(resource, localFile);
@@ -185,7 +187,7 @@ public class YarnUtils {
                                           CommonConfigurationKeysPublic.FS_DEFAULT_NAME_DEFAULT)).getScheme();
 
     // Loop through all name services. Each name service could have multiple name node associated with it.
-    for (Map.Entry<String, Map<String, InetSocketAddress>> entry : DFSUtil.getHaNnRpcAddresses(config).entrySet()) {
+    for (Map.Entry<String, Map<String, InetSocketAddress>> entry : DFSUtilClient.getHaNnRpcAddresses(config).entrySet()) {
       String nsId = entry.getKey();
       Map<String, InetSocketAddress> addressesInNN = entry.getValue();
       if (!HAUtil.isHAEnabled(config, nsId) || addressesInNN == null || addressesInNN.isEmpty()) {
@@ -198,7 +200,7 @@ public class YarnUtils {
       URI uri = URI.create(scheme + "://" + nsId);
 
       LOG.info("Cloning delegation token for uri {}", uri);
-      HAUtil.cloneDelegationTokenForLogicalUri(UserGroupInformation.getCurrentUser(), uri, addressesInNN.values());
+      HAUtilClient.cloneDelegationTokenForLogicalUri(UserGroupInformation.getCurrentUser(), uri, addressesInNN.values());
     }
   }
 
