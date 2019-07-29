@@ -23,12 +23,12 @@ import kafka.utils.VerifiableProperties;
 /**
  * A kafka {@link kafka.producer.Partitioner} using integer key to compute partition id.
  */
-public final class IntegerPartitioner implements Partitioner<Integer> {
+public final class IntegerPartitioner implements Partitioner {
 
   public IntegerPartitioner(VerifiableProperties properties) {
   }
 
-  public int partition(Integer key, int numPartitions) {
-    return key % numPartitions;
+  public int partition(Object key, int numPartitions) {
+    return ((Integer)key) % numPartitions;
   }
 }
