@@ -149,6 +149,6 @@ public final class EmbeddedKafkaServer extends AbstractIdleService {
       prop.setProperty("port", Integer.toString(randomPort));
     }
 
-    return new KafkaConfig(prop);
+    return new KafkaConfig(prop, true);
   }
 }
