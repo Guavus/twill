@@ -29,7 +29,7 @@
 
     <groupId>org.apache.twill</groupId>
     <artifactId>twill-parent</artifactId>
-    <version>0.13.2</version>
+    <version>0.13.3</version>
     <packaging>pom</packaging>
     <name>Apache Twill</name>
     <url>http://twill.apache.org</url>
@@ -181,6 +181,7 @@
         <commons-compress.version>1.5</commons-compress.version>
         <hadoop20.output.dir>target/hadoop20-classes</hadoop20.output.dir>
         <force.mac.tests>false</force.mac.tests>
+        <hadoop.version>3.1.0</hadoop.version>
     </properties>
 
     <scm>
@@ -401,7 +402,7 @@
                 </plugins>
             </build>
         </profile>
-        <profile>
+        <!--<profile>
             <id>hadoop-2.0</id>
             <properties>
                 <hadoop.version>2.0.2-alpha</hadoop.version>
@@ -596,8 +597,8 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-        <profile>
+        </profile>-->
+        <!--<profile>
             <id>hadoop-2.4</id>
             <properties>
                 <hadoop.version>2.4.1</hadoop.version>
@@ -639,7 +640,7 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
+        </profile>-->
         <profile>
             <id>hadoop-3.1</id>
             <properties>
@@ -684,7 +685,7 @@
                 </plugins>
             </build>
         </profile>
-        <profile>
+        <!--<profile>
             <id>mapr-hadoop-2.4</id>
             <properties>
                 <hadoop.version>2.4.1-mapr-1408</hadoop.version>
@@ -830,7 +831,7 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
+        </profile>-->
         <profile>
             <id>java8-test</id>
             <modules>
