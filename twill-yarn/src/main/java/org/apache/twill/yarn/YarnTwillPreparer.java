@@ -172,8 +172,17 @@ final class YarnTwillPreparer implements TwillPreparer {
 
   private void confirmRunnableName(String runnableName) {
     Preconditions.checkNotNull(runnableName);
-    Preconditions.checkArgument(twillSpec.getRunnables().containsKey(runnableName),
-                                "Runnable %s is not defined in the application.", runnableName);
+    /**
+     * Putting this hack b/c when explore is disabled,
+     * cdap gives error message:
+     * Failed to start master twill application java.lang.IllegalArgumentException: 
+     * Runnable explore.service is not defined in the application. 
+     * https://groups.google.com/forum/#!topic/cdap-user/b6XJdm4S30s
+     * https://guavus-jira.atlassian.net/browse/RAFD-2437
+     */
+    if(!"explore.service".equalsIgnoreCase(runnableName))
+    	Preconditions.checkArgument(twillSpec.getRunnables().containsKey(runnableName),
+    			"Runnable %s is not defined in the application.", runnableName);
   }
 
   @Override
