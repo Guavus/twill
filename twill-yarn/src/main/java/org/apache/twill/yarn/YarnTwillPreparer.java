@@ -180,9 +180,11 @@ final class YarnTwillPreparer implements TwillPreparer {
      * https://groups.google.com/forum/#!topic/cdap-user/b6XJdm4S30s
      * https://guavus-jira.atlassian.net/browse/RAFD-2437
      */
-    if(!"explore.service".equalsIgnoreCase(runnableName))
-    	Preconditions.checkArgument(twillSpec.getRunnables().containsKey(runnableName),
-    			"Runnable %s is not defined in the application.", runnableName);
+//When explore is not enabled , it gives an error.
+//https://guavus-jira.atlassian.net/browse/RAFD-2437
+//    if(!"explore.service".equalsIgnoreCase(runnableName))
+  //  	Preconditions.checkArgument(twillSpec.getRunnables().containsKey(runnableName),
+    //			"Runnable %s is not defined in the application.", runnableName);
   }
 
   @Override
