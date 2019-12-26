@@ -20,15 +20,23 @@ package org.apache.twill.internal.kafka;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.AbstractIdleService;
+
+import kafka.metrics.KafkaMetricsReporter;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServer;
-import kafka.utils.Time;
+import scala.Option;
+
 import org.I0Itec.zkclient.exception.ZkTimeoutException;
+import org.apache.kafka.common.utils.SystemTime;
+import org.apache.kafka.common.utils.Time;
 import org.apache.twill.internal.utils.Networks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.BindException;
+import java.nio.Buffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -97,27 +105,9 @@ public final class EmbeddedKafkaServer extends AbstractIdleService {
   }
 
   private KafkaServer createKafkaServer(KafkaConfig kafkaConfig) {
-    return new KafkaServer(kafkaConfig, new Time() {
-
-      @Override
-      public long milliseconds() {
-        return System.currentTimeMillis();
-      }
-
-      @Override
-      public long nanoseconds() {
-        return System.nanoTime();
-      }
-
-      @Override
-      public void sleep(long ms) {
-        try {
-          Thread.sleep(ms);
-        } catch (InterruptedException e) {
-          Thread.interrupted();
-        }
-      }
-    });
+	  List<KafkaMetricsReporter> kmrList = new ArrayList<>();
+	  scala.collection.mutable.Buffer<KafkaMetricsReporter> metricsList = scala.collection.JavaConversions.asScalaBuffer(kmrList);
+	  return new KafkaServer(kafkaConfig, new SystemTime(), Option.<String> empty(), metricsList);
   }
 
   /**
