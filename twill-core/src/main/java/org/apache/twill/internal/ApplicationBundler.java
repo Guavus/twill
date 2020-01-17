@@ -43,6 +43,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.URL;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.jar.JarEntry;
@@ -177,8 +178,12 @@ public final class ApplicationBundler {
     return this;
   }
 
+  public void createBundle(Location target, Iterable<Class<?>> classes, boolean skipPhoenixJar) throws IOException {
+    createBundle(target, classes, ImmutableList.<URI>of(), skipPhoenixJar);
+  }
+  
   public void createBundle(Location target, Iterable<Class<?>> classes) throws IOException {
-    createBundle(target, classes, ImmutableList.<URI>of());
+    createBundle(target, classes, false);
   }
 
   /**
@@ -200,6 +205,13 @@ public final class ApplicationBundler {
    * @throws IOException if failed to create the bundle
    */
   public void createBundle(Location target, Iterable<Class<?>> classes, Iterable<URI> resources) throws IOException {
+    createBundle(target, classes, resources, false);
+  }
+  
+  public void createBundle(Location target, Iterable<Class<?>> classes, Iterable<URI> resources,
+      boolean skipPhoenixJar) throws IOException {
+    LOG.debug("createBundle called with arguments: classess {}, resources {}, skipPhoenixJar {}",
+        classes, resources, skipPhoenixJar);
     LOG.debug("Start creating bundle at {}", target);
     // Write the jar to local tmp file first
     File tmpJar = File.createTempFile(target.getName(), ".tmp", tempDir);
@@ -208,7 +220,7 @@ public final class ApplicationBundler {
       Set<String> entries = Sets.newHashSet();
       try (JarOutputStream jarOut = new JarOutputStream(new FileOutputStream(tmpJar))) {
         // Find class dependencies
-        findDependencies(classes, entries, jarOut);
+        findDependencies(classes, entries, jarOut, skipPhoenixJar);
 
         // Add extra resources
         for (URI resource : resources) {
@@ -233,7 +245,7 @@ public final class ApplicationBundler {
   }
 
   private void findDependencies(Iterable<Class<?>> classes, final Set<String> entries,
-                                final JarOutputStream jarOut) throws IOException {
+              final JarOutputStream jarOut, final boolean skipPhoenixJar) throws IOException {
 
     Iterable<String> classNames = Iterables.transform(classes, new Function<Class<?>, String>() {
       @Override
@@ -258,7 +270,19 @@ public final class ApplicationBundler {
         if (!classAcceptor.accept(className, classUrl, classPathUrl)) {
           return false;
         }
+        
         if (seenClassPaths.add(classPathUrl)) {
+          String classPath = classPathUrl.getFile();
+          if (classPath.endsWith(".jar")) {
+            String entryName = classPath.substring(classPath.lastIndexOf('/') + 1);
+            if ((entryName.toLowerCase().indexOf("phoenix") >= 0) && 
+                (entryName.toLowerCase().indexOf("-server") >= 0) &&
+                (skipPhoenixJar)) {            
+              LOG.info("Skipping bundling of phoenix server jar");
+              return true;
+            }
+          }
+          
           putEntry(className, classUrl, classPathUrl, entries, jarOut);
         }
         return true;
@@ -266,7 +290,10 @@ public final class ApplicationBundler {
     }, classNames);
   }
 
-  private void putEntry(String className, URL classUrl, URL classPathUrl, Set<String> entries, JarOutputStream jarOut) {
+  private void putEntry(String className, URL classUrl, URL classPathUrl, Set<String> entries,
+      JarOutputStream jarOut) {
+    LOG.debug("putEntry called with arguments: className {}, classUrl {}, classPathUrl {}",
+        className, classUrl, classPathUrl);
     String classPath = classPathUrl.getFile();
     if (classPath.endsWith(".jar")) {
       String entryName = classPath.substring(classPath.lastIndexOf('/') + 1);

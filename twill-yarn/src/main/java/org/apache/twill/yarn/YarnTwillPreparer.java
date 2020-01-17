@@ -154,6 +154,8 @@ final class YarnTwillPreparer implements TwillPreparer {
   private String schedulerQueue;
   private ClassAcceptor classAcceptor;
   private String classLoaderClassName;
+  private static final String SKIP_PHONEIX_KEY = "CDAP_SKIP_PHOENIX_JAR";
+
 
   YarnTwillPreparer(Configuration config, TwillSpecification twillSpec, RunId runId,
                     String zkConnectString, Location appLocation, @Nullable String extraOptions,
@@ -575,6 +577,10 @@ final class YarnTwillPreparer implements TwillPreparer {
 
   private void createApplicationJar(final ApplicationBundler bundler,
                                     Map<String, LocalFile> localFiles) throws IOException {
+    Map<String, String> env = System.getenv();
+    final boolean skipPhoenixJar = (env.containsKey(SKIP_PHONEIX_KEY)) && 
+                                   (!(twillSpec.getName().equals("master.services")));
+    
     try {
       final Set<Class<?>> classes = Sets.newIdentityHashSet();
       classes.addAll(dependencies);
@@ -604,7 +610,7 @@ final class YarnTwillPreparer implements TwillPreparer {
       Location location = locationCache.get(name, new LocationCache.Loader() {
         @Override
         public void load(String name, Location targetLocation) throws IOException {
-          bundler.createBundle(targetLocation, classes);
+          bundler.createBundle(targetLocation, classes, skipPhoenixJar);
         }
       });
 
