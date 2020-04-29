@@ -180,7 +180,7 @@ public final class ApplicationBundler {
   public void createBundle(Location target, Iterable<Class<?>> classes) throws IOException {
     createBundle(target, classes, ImmutableList.<URI>of());
   }
-
+ 
   /**
    * Same as calling {@link #createBundle(Location, Iterable)}.
    */
@@ -200,7 +200,10 @@ public final class ApplicationBundler {
    * @throws IOException if failed to create the bundle
    */
   public void createBundle(Location target, Iterable<Class<?>> classes, Iterable<URI> resources) throws IOException {
-    LOG.debug("Start creating bundle at {}", target);
+    
+    LOG.debug("Start creating bundle at {}, for classes {}, resources {}, bootstrap classpaths {}",
+        target, classes, resources, bootstrapClassPaths);
+
     // Write the jar to local tmp file first
     File tmpJar = File.createTempFile(target.getName(), ".tmp", tempDir);
     LOG.debug("First create bundle locally at {}", tmpJar);
@@ -208,7 +211,7 @@ public final class ApplicationBundler {
       Set<String> entries = Sets.newHashSet();
       try (JarOutputStream jarOut = new JarOutputStream(new FileOutputStream(tmpJar))) {
         // Find class dependencies
-        findDependencies(classes, entries, jarOut);
+        findDependencies(classes, entries, jarOut, target);
 
         // Add extra resources
         for (URI resource : resources) {
@@ -233,7 +236,7 @@ public final class ApplicationBundler {
   }
 
   private void findDependencies(Iterable<Class<?>> classes, final Set<String> entries,
-                                final JarOutputStream jarOut) throws IOException {
+                                final JarOutputStream jarOut, final Location target) throws IOException {
 
     Iterable<String> classNames = Iterables.transform(classes, new Function<Class<?>, String>() {
       @Override
@@ -256,7 +259,13 @@ public final class ApplicationBundler {
           return false;
         }
         if (!classAcceptor.accept(className, classUrl, classPathUrl)) {
-          return false;
+          if ((target.getName().contains(Constants.Files.TWILL_JAR)) &&
+              (classPathUrl.getFile().contains("scala"))){
+            LOG.debug("In findDependencies, accept API, classAcceptor.accept call. Found target twill.jar and scala classPathUrl {}",
+                classPathUrl);
+          } else {
+            return false;
+          }
         }
         if (seenClassPaths.add(classPathUrl)) {
           putEntry(className, classUrl, classPathUrl, entries, jarOut);
@@ -267,6 +276,8 @@ public final class ApplicationBundler {
   }
 
   private void putEntry(String className, URL classUrl, URL classPathUrl, Set<String> entries, JarOutputStream jarOut) {
+    LOG.debug("In putEntry API, adding dependency class: {}, classUrl {}, classPathUrl {}", className, classUrl, classPathUrl);
+
     String classPath = classPathUrl.getFile();
     if (classPath.endsWith(".jar")) {
       String entryName = classPath.substring(classPath.lastIndexOf('/') + 1);
@@ -335,7 +346,8 @@ public final class ApplicationBundler {
     if (!entries.add(entry)) {
       return;
     }
-    LOG.trace("adding bundle entry " + entry);
+    LOG.debug("adding bundle entry " + entry);
+ 
     try {
       JarEntry jarEntry = new JarEntry(entry);
 

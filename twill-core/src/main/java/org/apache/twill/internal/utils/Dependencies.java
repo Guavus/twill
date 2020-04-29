@@ -34,12 +34,15 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.TypePath;
 import org.objectweb.asm.signature.SignatureReader;
 import org.objectweb.asm.signature.SignatureVisitor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.util.HashSet;
 import java.util.Queue;
 import java.util.Set;
 
@@ -48,6 +51,8 @@ import java.util.Set;
  */
 public final class Dependencies {
 
+  private static final Logger LOG = LoggerFactory.getLogger(Dependencies.class);
+  
   public static void findClassDependencies(ClassLoader classLoader,
                                            ClassAcceptor acceptor,
                                            String...classesToResolve) throws IOException {
@@ -71,6 +76,10 @@ public final class Dependencies {
     // Breadth-first-search classes dependencies.
     while (!classes.isEmpty()) {
       String className = classes.remove();
+      LOG.debug("In findClassDependencies API. Current class {}", className);
+
+      final Set<String> newClassesToBeChecked = new HashSet<String>();
+      
       URL classUrl = getClassURL(className, classLoader);
       if (classUrl == null) {
         continue;
@@ -88,11 +97,13 @@ public final class Dependencies {
           public void accept(String className) {
             // See if the class is accepted
             if (seenClasses.add(className)) {
+              newClassesToBeChecked.add(className);
               classes.add(className);
             }
           }
         }), ClassReader.SKIP_DEBUG + ClassReader.SKIP_FRAMES);
       }
+      LOG.debug("In findClassDependencies API. Current class {}, new claases added {}", className, newClassesToBeChecked);
     }
   }
 
