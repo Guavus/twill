@@ -27,6 +27,7 @@ import com.google.common.collect.Sets;
 import com.google.common.reflect.TypeToken;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.twill.api.Command;
@@ -102,7 +103,8 @@ public abstract class AbstractTwillController extends AbstractZKServiceControlle
   @Override
   protected synchronized void doStartUp() {
     if (kafkaClient != null && !logHandlers.isEmpty()) {
-      kafkaClient.startAndWait();
+      kafkaClient.startAsync();
+      kafkaClient.awaitRunning();
       logCancellable = kafkaClient.getConsumer().prepare()
                                   .addFromBeginning(Constants.LOG_TOPIC, 0)
                                   .consume(new LogMessageCallback(logHandlers));
@@ -119,7 +121,8 @@ public abstract class AbstractTwillController extends AbstractZKServiceControlle
     }
     if (kafkaClient != null) {
       // Safe to call stop no matter what state the KafkaClientService is in.
-      kafkaClient.stopAndWait();
+      kafkaClient.stopAsync();
+      kafkaClient.awaitTerminated();
     }
   }
 
@@ -133,7 +136,8 @@ public abstract class AbstractTwillController extends AbstractZKServiceControlle
 
     logHandlers.add(handler);
     if (logHandlers.size() == 1) {
-      kafkaClient.startAndWait();
+      kafkaClient.startAsync();
+      kafkaClient.awaitRunning();
       logCancellable = kafkaClient.getConsumer().prepare()
         .addFromBeginning(Constants.LOG_TOPIC, 0)
         .consume(new LogMessageCallback(logHandlers));
@@ -198,7 +202,7 @@ public abstract class AbstractTwillController extends AbstractZKServiceControlle
                                public String apply(Set<String> input) {
                                  return runnable;
                                }
-                             });
+                             }, MoreExecutors.directExecutor());
   }
 
   @Override

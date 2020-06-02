@@ -59,12 +59,12 @@ final class SimpleMessage implements Message {
 
   @Override
   public String toString() {
-    return Objects.toStringHelper(Message.class)
-      .add("type", type)
-      .add("scope", scope)
-      .add("runnable", runnableName)
-      .add("command", command)
-      .toString();
+    return "SimpleMessage{" +
+            "type=" + type +
+            ", scope=" + scope +
+            ", runnableName='" + runnableName + '\'' +
+            ", command=" + command +
+            '}';
   }
 
   @Override

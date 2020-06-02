@@ -21,15 +21,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
 import com.google.common.base.Supplier;
-import com.google.common.collect.DiscreteDomains;
-import com.google.common.collect.HashMultiset;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multiset;
-import com.google.common.collect.Ranges;
-import com.google.common.collect.Sets;
+import com.google.common.collect.*;
 import com.google.common.reflect.TypeToken;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -636,7 +628,8 @@ public final class ApplicationMasterService extends AbstractYarnTwillService imp
         if (action.getTimeout() < 0) {
           // Abort application
           stopStatus = StopStatus.ABORTED;
-          stop();
+          stopAsync();
+          awaitTerminated();
         } else {
           return nextTimeoutCheck + action.getTimeout();
         }
@@ -914,6 +907,11 @@ public final class ApplicationMasterService extends AbstractYarnTwillService imp
     // Find the current order of the given runnable in order to create a RunnableContainerRequest.
     TwillSpecification.Order order = Iterables.find(twillSpec.getOrders(), new Predicate<TwillSpecification.Order>() {
       @Override
+      public boolean test(TwillSpecification.Order input) {
+        return false;
+      }
+
+      @Override
       public boolean apply(TwillSpecification.Order input) {
         return (input.getNames().contains(runnableName));
       }
@@ -1023,7 +1021,10 @@ public final class ApplicationMasterService extends AbstractYarnTwillService imp
         int runningCount = runningContainers.count(runnableName);
         Set<Integer> instancesToRemove = instanceIds == null ? null : ImmutableSet.copyOf(instanceIds);
         if (instancesToRemove == null) {
-          instancesToRemove = Ranges.closedOpen(0, runningCount).asSet(DiscreteDomains.integers());
+//          instancesToRemove = Ranges.closedOpen(0, runningCount).asSet(DiscreteDomains.integers());
+          for(int _i=0; _i <= runningCount; ++_i){
+            instancesToRemove.add(_i);
+          }
         }
 
         LOG.info("Restarting instances {} for runnable {}", instancesToRemove, runnableName);

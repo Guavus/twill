@@ -50,9 +50,11 @@ public final class RunnableProcessLauncher extends AbstractYarnProcessLauncher<Y
 
   @Override
   public String toString() {
-    return Objects.toStringHelper(this)
-      .add("container", containerInfo)
-      .toString();
+    return "RunnableProcessLauncher{" +
+            "containerInfo=" + containerInfo +
+            ", nmClient=" + nmClient +
+            ", launched=" + launched +
+            '}';
   }
 
   @Override

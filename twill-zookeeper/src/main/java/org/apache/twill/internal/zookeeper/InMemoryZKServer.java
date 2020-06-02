@@ -32,6 +32,8 @@ import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  *
@@ -123,13 +125,38 @@ public final class InMemoryZKServer implements Service {
   }
 
   @Override
-  public ListenableFuture<State> start() {
-    return delegateService.start();
+  public Service startAsync() {
+    return delegateService.startAsync();
   }
 
   @Override
-  public State startAndWait() {
-    return delegateService.startAndWait();
+  public Service stopAsync() {
+    return delegateService.stopAsync();
+  }
+
+  @Override
+  public void awaitRunning() {
+    delegateService.awaitRunning();
+  }
+
+  @Override
+  public void awaitRunning(long l, TimeUnit timeUnit) throws TimeoutException {
+    delegateService.awaitRunning(l, timeUnit);
+  }
+
+  @Override
+  public void awaitTerminated() {
+    delegateService.awaitTerminated();
+  }
+
+  @Override
+  public void awaitTerminated(long l, TimeUnit timeUnit) throws TimeoutException {
+    delegateService.awaitTerminated(l, timeUnit);
+  }
+
+  @Override
+  public Throwable failureCause() {
+    return delegateService.failureCause();
   }
 
   @Override
@@ -142,15 +169,7 @@ public final class InMemoryZKServer implements Service {
     return delegateService.state();
   }
 
-  @Override
-  public ListenableFuture<State> stop() {
-    return delegateService.stop();
-  }
 
-  @Override
-  public State stopAndWait() {
-    return delegateService.stopAndWait();
-  }
 
   @Override
   public void addListener(Listener listener, Executor executor) {

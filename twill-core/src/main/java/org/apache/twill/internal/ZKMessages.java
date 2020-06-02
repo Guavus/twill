@@ -17,10 +17,7 @@
  */
 package org.apache.twill.internal;
 
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
+import com.google.common.util.concurrent.*;
 import org.apache.twill.internal.state.Message;
 import org.apache.twill.internal.state.MessageCodec;
 import org.apache.twill.zookeeper.ZKClient;
@@ -79,14 +76,14 @@ public final class ZKMessages {
           public void onFailure(Throwable t) {
             completion.setException(t);
           }
-        });
+        }, MoreExecutors.directExecutor());
       }
 
       @Override
       public void onFailure(Throwable t) {
         completion.setException(t);
       }
-    });
+    }, MoreExecutors.directExecutor());
   }
 
   private ZKMessages() {

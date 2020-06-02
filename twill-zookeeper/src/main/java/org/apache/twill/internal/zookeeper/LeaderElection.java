@@ -234,7 +234,8 @@ public final class LeaderElection extends AbstractService {
       handler.leader();
     } catch (Throwable t) {
       LOG.warn("Exception thrown when calling leader() method. Withdraw from the leader election process.", t);
-      stop();
+      stopAsync();
+      awaitTerminated();
     }
   }
 
@@ -245,7 +246,8 @@ public final class LeaderElection extends AbstractService {
       handler.follower();
     } catch (Throwable t) {
       LOG.warn("Exception thrown when calling follower() method. Withdraw from the leader election process.", t);
-      stop();
+      stopAsync();
+      awaitTerminated();
     }
   }
 

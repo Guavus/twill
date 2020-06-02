@@ -54,12 +54,12 @@ public final class BrokerInfo {
     result = 31 * result + port;
     return result;
   }
-
+  
   @Override
   public String toString() {
-    return Objects.toStringHelper(BrokerInfo.class)
-                  .add("host", host)
-                  .add("port", port)
-                  .toString();
+    return "BrokerInfo{" +
+            "host='" + host + '\'' +
+            ", port=" + port +
+            '}';
   }
 }

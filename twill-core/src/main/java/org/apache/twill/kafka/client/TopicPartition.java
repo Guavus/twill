@@ -62,9 +62,9 @@ public class TopicPartition {
 
   @Override
   public String toString() {
-    return Objects.toStringHelper(this)
-      .add("topic", topic)
-      .add("partition", partition)
-      .toString();
+    return "TopicPartition{" +
+            "topic='" + topic + '\'' +
+            ", partition=" + partition +
+            '}';
   }
 }

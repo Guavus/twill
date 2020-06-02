@@ -31,10 +31,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Table;
 import com.google.common.hash.Hashing;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.Service;
+import com.google.common.util.concurrent.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.hadoop.yarn.api.records.ContainerState;
@@ -58,6 +55,7 @@ import org.apache.twill.internal.TwillRuntimeSpecification;
 import org.apache.twill.internal.container.TwillContainerMain;
 import org.apache.twill.internal.state.Message;
 import org.apache.twill.internal.state.SystemMessages;
+import org.apache.twill.internal.utils.Utility;
 import org.apache.twill.internal.yarn.YarnContainerStatus;
 import org.apache.twill.zookeeper.NodeChildren;
 import org.apache.twill.zookeeper.ZKClient;
@@ -68,6 +66,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
@@ -78,6 +77,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -260,7 +260,7 @@ final class RunningContainers {
 
     LOG.info("Stopping service: {} {}", runnableName, controller.getRunId());
     // This call will block until handleCompleted() method runs or a timeout occurs
-    controller.stopAndWait();
+    controller.stopAsync().awaitTerminated();
 
     // Remove the stopped container state if it exists (in the case of killing the container due to timeout)
     containerLock.lock();
@@ -394,7 +394,15 @@ final class RunningContainers {
       containerLock.lock();
       try {
         for (TwillContainerController controller : containers.row(runnableName).values()) {
-          futures.add(controller.stop());
+          final Service tempController = controller;
+          futures.add(Utility.getListenableFutureFromService(new Callable<Service.State>() {
+            @Override
+            public Service.State call() throws Exception {
+              Service service = tempController.stopAsync();
+              tempController.awaitTerminated();
+              return service.state();
+            }
+          }));
         }
       } finally {
         containerLock.unlock();
@@ -570,7 +578,7 @@ final class RunningContainers {
           }
         }
       }
-    });
+    }, MoreExecutors.directExecutor());
   }
 
   /**
@@ -724,7 +732,7 @@ final class RunningContainers {
     try {
       Gson gson = new GsonBuilder().serializeNulls().create();
       String jsonStr = gson.toJson(logLevels);
-      String fileName = Hashing.md5().hashString(jsonStr) + "." + Constants.Files.LOG_LEVELS;
+      String fileName = Hashing.md5().hashString(jsonStr, StandardCharsets.UTF_8) + "." + Constants.Files.LOG_LEVELS;
       Location location = applicationLocation.append(fileName);
       if (!location.exists()) {
         try (Writer writer = new OutputStreamWriter(location.getOutputStream(), Charsets.UTF_8)) {

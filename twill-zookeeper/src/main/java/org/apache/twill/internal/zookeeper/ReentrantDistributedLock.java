@@ -20,11 +20,7 @@ package org.apache.twill.internal.zookeeper;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
-import com.google.common.util.concurrent.Uninterruptibles;
+import com.google.common.util.concurrent.*;
 import org.apache.twill.common.Cancellable;
 import org.apache.twill.common.Threads;
 import org.apache.twill.zookeeper.NodeChildren;
@@ -258,7 +254,7 @@ public class ReentrantDistributedLock implements Lock {
           completion.setException(t);
         }
       }
-    });
+    }, MoreExecutors.directExecutor());
 
     // Gets the result from the completion
     try {
@@ -353,7 +349,7 @@ public class ReentrantDistributedLock implements Lock {
               completion.setException(t);
             }
           }
-        });
+        }, MoreExecutors.directExecutor());
       }
 
       @Override
@@ -364,7 +360,7 @@ public class ReentrantDistributedLock implements Lock {
           doAcquire(completion, waitForLock, guid, null);
         }
       }
-    });
+    }, MoreExecutors.directExecutor());
   }
 
   /**
