@@ -22,7 +22,7 @@ limitations under the License.
     <parent>
         <artifactId>twill-parent</artifactId>
         <groupId>org.apache.twill</groupId>
-        <version>0.13.4</version>
+        <version>0.13.5</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -53,5 +53,37 @@ limitations under the License.
             <artifactId>junit</artifactId>
         </dependency>
     </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.3</version>
+                <executions>
+                    <execution>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <artifactSet>
+                                <includes>
+                                    <include>com.google.guava:*</include>
+                                </includes>
+                            </artifactSet>
+                            <minimizeJar>false</minimizeJar>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.google.common</pattern>
+                                    <shadedPattern>repackaged.com.google.common</shadedPattern>
+                                </relocation>
+                            </relocations>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

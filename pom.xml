@@ -29,7 +29,7 @@
 
     <groupId>org.apache.twill</groupId>
     <artifactId>twill-parent</artifactId>
-    <version>0.13.4</version>
+    <version>0.13.5</version>
     <packaging>pom</packaging>
     <name>Apache Twill</name>
     <url>http://twill.apache.org</url>
@@ -132,7 +132,7 @@
         <module>twill-core</module>
         <module>twill-yarn</module>
         <module>twill-ext</module>
-        <module>twill-examples</module>
+<!--  removing as getting compilation errors in this after shading guava(google.common)      <module>twill-examples</module>-->
     </modules>
 
 
@@ -181,7 +181,7 @@
         <commons-compress.version>1.5</commons-compress.version>
         <hadoop20.output.dir>target/hadoop20-classes</hadoop20.output.dir>
         <force.mac.tests>false</force.mac.tests>
-        <hadoop.version>3.1.0</hadoop.version>
+        <hadoop.version>3.1.1</hadoop.version>
     </properties>
 
     <scm>
@@ -304,6 +304,34 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.3</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <artifactSet>
+                                <includes>
+                                    <include>com.google.guava:*</include>
+                                </includes>
+                            </artifactSet>
+                            <minimizeJar>false</minimizeJar>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.google.common</pattern>
+                                    <shadedPattern>repackaged.com.google.common</shadedPattern>
+                                </relocation>
+                            </relocations>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.1</version>
                 <configuration>
@@ -405,7 +433,7 @@
         <profile>
             <id>hadoop-3.1</id>
             <properties>
-                <hadoop.version>3.1.0</hadoop.version>
+                <hadoop.version>3.1.1</hadoop.version>
             </properties>
             <activation>
                 <activeByDefault>true</activeByDefault>
