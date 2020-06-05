@@ -41,29 +41,27 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.2.3</version>
+                <version>3.2.4</version>
                 <executions>
-                    <execution>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <artifactSet>
-                                <includes>
-                                    <include>com.google.guava:*</include>
-                                </includes>
-                            </artifactSet>
-                            <minimizeJar>false</minimizeJar>
-                            <relocations>
-                                <relocation>
-                                    <pattern>com.google.common</pattern>
-                                    <shadedPattern>repackaged.com.google.common</shadedPattern>
-                                </relocation>
-                            </relocations>
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
-                        </configuration>
-                    </execution>
+                <execution>
+                    <phase>package</phase>
+                    <goals>
+                    <goal>shade</goal>
+                    </goals>
+                    <configuration>
+                    <relocations>
+                        <relocation>
+                        <pattern>com.google.common</pattern>
+                        <shadedPattern>shaded.com.google.common</shadedPattern>
+                        </relocation>
+                    </relocations>
+                    <artifactSet>
+                        <includes>
+                        <include>com.google.guava:guava</include>
+                        </includes>
+                    </artifactSet>
+                    </configuration>
+                </execution>
                 </executions>
             </plugin>
         </plugins>
