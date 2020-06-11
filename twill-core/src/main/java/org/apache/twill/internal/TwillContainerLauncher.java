@@ -315,7 +315,7 @@ public final class TwillContainerLauncher {
     }
 
     private void killAndWait(int maxWaitSecs) {
-      Stopwatch watch = Stopwatch.createStarted();
+      Stopwatch watch = Stopwatch.createUnstarted();
       watch.start();
       while (watch.elapsed(TimeUnit.SECONDS) < maxWaitSecs) {
         // Kill the application

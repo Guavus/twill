@@ -150,7 +150,7 @@ final class YarnTwillController extends AbstractTwillController implements Twill
       LOG.info("Application {} with id {} submitted", appName, appId);
 
       YarnApplicationState state = report.getYarnApplicationState();
-      Stopwatch stopWatch = Stopwatch.createStarted();
+      Stopwatch stopWatch = Stopwatch.createUnstarted();
 
       LOG.debug("Checking yarn application status for {} {}", appName, appId);
       while (!hasRun(state) && stopWatch.elapsed(startTimeoutUnit) < startTimeout) {
@@ -194,7 +194,7 @@ final class YarnTwillController extends AbstractTwillController implements Twill
     FinalApplicationStatus finalStatus;
     // Poll application status from yarn
     try (ProcessController<YarnApplicationReport> processController = this.processController) {
-      Stopwatch stopWatch = Stopwatch.createStarted();
+      Stopwatch stopWatch = Stopwatch.createUnstarted();
       long maxTime = TimeUnit.MILLISECONDS.convert(Constants.APPLICATION_MAX_STOP_SECONDS, TimeUnit.SECONDS);
 
       YarnApplicationReport report = processController.getReport();

@@ -218,7 +218,7 @@ public final class KafkaAppender extends UnsynchronizedAppenderBase<ILoggingEven
     }
 
     try {
-      Stopwatch stopwatch = Stopwatch.createStarted();
+      Stopwatch stopwatch = Stopwatch.createUnstarted();
       stopwatch.start();
       long publishTimeout = timeout;
 
