@@ -34,8 +34,9 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
+import com.google.common.io.ByteSink;
 import com.google.common.io.ByteStreams;
-import com.google.common.io.OutputSupplier;
+import com.google.common.io.CharSink;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -450,7 +451,8 @@ final class YarnTwillPreparer implements TwillPreparer {
                                                        Configs.Defaults.LOG_COLLECTION_ENABLED);
       YarnTwillController controller = controllerFactory.create(runId, logCollectionEnabled,
                                                                 logHandlers, submitTask, timeout, timeoutUnit);
-      controller.start();
+      controller.startAsync();
+      controller.awaitRunning();
       return controller;
     } catch (Exception e) {
       LOG.error("Failed to submit application {}", twillSpec.getName(), e);
@@ -584,7 +586,7 @@ final class YarnTwillPreparer implements TwillPreparer {
       Collections.sort(classList);
       Hasher hasher = Hashing.md5().newHasher();
       for (String name : classList) {
-        hasher.putString(name);
+        hasher.putString(name, StandardCharsets.UTF_8);
       }
       // Only depends on class list so that it can be reused across different launches
       String name = hasher.hash().toString() + "-" + Constants.Files.APPLICATION_JAR;
@@ -801,10 +803,10 @@ final class YarnTwillPreparer implements TwillPreparer {
 
   private void saveArguments(Arguments arguments, final Path targetPath) throws IOException {
     LOG.debug("Creating {}", targetPath);
-    ArgumentsCodec.encode(arguments, new OutputSupplier<Writer>() {
+    ArgumentsCodec.encode(arguments, new ByteSink() {
       @Override
-      public Writer getOutput() throws IOException {
-        return Files.newBufferedWriter(targetPath, StandardCharsets.UTF_8);
+      public OutputStream openStream() throws IOException {
+        return Files.newOutputStream(targetPath);
       }
     });
     LOG.debug("Done {}", targetPath);

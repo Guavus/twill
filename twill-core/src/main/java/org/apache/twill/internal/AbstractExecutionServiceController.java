@@ -18,15 +18,11 @@
 package org.apache.twill.internal;
 
 import com.google.common.base.Function;
-import com.google.common.util.concurrent.AbstractIdleService;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.Service;
-import com.google.common.util.concurrent.SettableFuture;
-import com.google.common.util.concurrent.Uninterruptibles;
+import com.google.common.util.concurrent.*;
 import org.apache.twill.api.RunId;
 import org.apache.twill.api.ServiceController;
 import org.apache.twill.common.Threads;
+import sun.awt.windows.ThemeReader;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -79,14 +75,14 @@ public abstract class AbstractExecutionServiceController implements ServiceContr
 
   @Override
   public Future<? extends ServiceController> terminate() {
-    stop();
-
+    stopAsync();
+    awaitTerminated();
     return Futures.transform(terminationFuture, new Function<State, ServiceController>() {
       @Override
       public ServiceController apply(State input) {
         return AbstractExecutionServiceController.this;
       }
-    });
+    }, MoreExecutors.directExecutor());
   }
 
   @Nullable
@@ -121,29 +117,35 @@ public abstract class AbstractExecutionServiceController implements ServiceContr
   }
 
   @Override
-  public void awaitTerminated() throws ExecutionException {
-    Uninterruptibles.getUninterruptibly(terminationFuture);
+  public void awaitTerminated() {
+    try {
+      Uninterruptibles.getUninterruptibly(terminationFuture);
+    } catch (ExecutionException e) {
+      e.printStackTrace();
+    }
   }
 
   @Override
-  public void awaitTerminated(long timeout, TimeUnit timeoutUnit) throws TimeoutException, ExecutionException {
-    Uninterruptibles.getUninterruptibly(terminationFuture, timeout, timeoutUnit);
+  public void awaitTerminated(long timeout, TimeUnit timeoutUnit) throws TimeoutException {
+    try {
+      Uninterruptibles.getUninterruptibly(terminationFuture, timeout, timeoutUnit);
+    } catch (ExecutionException e) {
+      e.printStackTrace();
+    }
   }
 
   public final void addListener(Listener listener, Executor executor) {
     listenerExecutors.addListener(new ListenerExecutor(listener, executor));
   }
 
-  @Override
-  public final ListenableFuture<State> start() {
-    serviceDelegate.addListener(listenerExecutors, Threads.SAME_THREAD_EXECUTOR);
-    return serviceDelegate.start();
-  }
 
   @Override
-  public final State startAndWait() {
-    return Futures.getUnchecked(start());
+  public Service startAsync() {
+    serviceDelegate.addListener(listenerExecutors, Threads.SAME_THREAD_EXECUTOR);
+    return serviceDelegate.startAsync();
   }
+
+
 
   @Override
   public final boolean isRunning() {
@@ -155,15 +157,6 @@ public abstract class AbstractExecutionServiceController implements ServiceContr
     return serviceDelegate.state();
   }
 
-  @Override
-  public final State stopAndWait() {
-    return Futures.getUnchecked(stop());
-  }
-
-  @Override
-  public final ListenableFuture<State> stop() {
-    return serviceDelegate.stop();
-  }
 
   protected Executor executor(final State state) {
     return new Executor() {
@@ -192,16 +185,12 @@ public abstract class AbstractExecutionServiceController implements ServiceContr
       AbstractExecutionServiceController.this.shutDown();
     }
 
-    @Override
-    protected Executor executor(State state) {
-      return AbstractExecutionServiceController.this.executor(state);
-    }
   }
 
   /**
    * Inner class for dispatching listener call back to a list of listeners.
    */
-  private static final class ListenerExecutors implements Listener {
+  private static final class ListenerExecutors extends Listener {
 
     private interface Callback {
       void call(Listener listener);

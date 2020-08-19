@@ -17,6 +17,7 @@
  */
 package org.apache.twill.kafka.client;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 
 /**
@@ -62,9 +63,9 @@ public class TopicPartition {
 
   @Override
   public String toString() {
-    return Objects.toStringHelper(this)
-      .add("topic", topic)
-      .add("partition", partition)
-      .toString();
+    return MoreObjects.toStringHelper(this)
+            .add("topic", topic)
+            .add("partition", partition)
+            .toString();
   }
 }

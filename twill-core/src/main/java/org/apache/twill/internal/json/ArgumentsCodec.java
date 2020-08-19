@@ -18,8 +18,8 @@
 package org.apache.twill.internal.json;
 
 import com.google.common.collect.ImmutableMultimap;
-import com.google.common.io.InputSupplier;
-import com.google.common.io.OutputSupplier;
+import com.google.common.io.ByteSink;
+import com.google.common.io.ByteSource;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -48,15 +49,15 @@ public final class ArgumentsCodec implements JsonSerializer<Arguments>, JsonDese
   private static final Gson GSON = new GsonBuilder().registerTypeAdapter(Arguments.class, new ArgumentsCodec())
                                                     .create();
 
-  public static void encode(Arguments arguments, OutputSupplier<? extends Writer> writerSupplier) throws IOException {
-    try (Writer writer = writerSupplier.getOutput()) {
+  public static void encode(Arguments arguments, ByteSink sink) throws IOException {
+    try (Writer writer = sink.asCharSink(StandardCharsets.UTF_8).openStream()) {
       GSON.toJson(arguments, writer);
     }
   }
 
 
-  public static Arguments decode(InputSupplier<? extends Reader> readerSupplier) throws IOException {
-    try (Reader reader = readerSupplier.getInput()) {
+  public static Arguments decode(ByteSource source) throws IOException {
+    try (Reader reader = source.asCharSource(StandardCharsets.UTF_8).openStream()) {
       return GSON.fromJson(reader, Arguments.class);
     }
   }

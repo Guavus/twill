@@ -167,7 +167,7 @@
         <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
         <slf4j.version>1.7.5</slf4j.version>
         <logback.version>1.0.9</logback.version>
-        <guava.version>13.0.1</guava.version>
+        <guava.version>28.0-jre</guava.version>
         <gson.version>2.2.4</gson.version>
         <findbugs.jsr305.version>2.0.1</findbugs.jsr305.version>
         <netty.version>4.1.16.Final</netty.version>
@@ -181,7 +181,7 @@
         <commons-compress.version>1.5</commons-compress.version>
         <hadoop20.output.dir>target/hadoop20-classes</hadoop20.output.dir>
         <force.mac.tests>false</force.mac.tests>
-        <hadoop.version>3.1.0</hadoop.version>
+        <hadoop.version>3.1.1</hadoop.version>
     </properties>
 
     <scm>

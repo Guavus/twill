@@ -85,6 +85,7 @@ import org.apache.twill.zookeeper.ZKClients;
 import org.apache.twill.zookeeper.ZKOperations;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -180,12 +181,12 @@ public final class YarnTwillRunnerService implements TwillRunnerService {
 
   @Override
   public void start() {
-    serviceDelegate.startAndWait();
+    serviceDelegate.startAsync().awaitRunning();
   }
 
   @Override
   public void stop() {
-    serviceDelegate.stopAndWait();
+    serviceDelegate.stopAsync().awaitTerminated();
   }
 
   /**
@@ -347,7 +348,7 @@ public final class YarnTwillRunnerService implements TwillRunnerService {
   }
 
   private void startUp() throws Exception {
-    zkClientService.startAndWait();
+    zkClientService.startAsync().awaitRunning();
 
     // Create the root node, so that the namespace root would get created if it is missing
     // If the exception is caused by node exists, then it's ok. Otherwise propagate the exception.
@@ -406,7 +407,12 @@ public final class YarnTwillRunnerService implements TwillRunnerService {
   private LocationCacheCleaner startLocationCacheCleaner(final Location cacheBase, final String sessionId) {
     LocationCacheCleaner cleaner = new LocationCacheCleaner(
       yarnConfig, cacheBase, sessionId, new Predicate<Location>() {
-        @Override
+      @Override
+      public boolean test(@Nullable Location input) {
+        return false;
+      }
+
+      @Override
         public boolean apply(Location location) {
           // Collects all the locations that is being used by any live applications
           Set<Location> activeLocations = new HashSet<>();
@@ -434,7 +440,7 @@ public final class YarnTwillRunnerService implements TwillRunnerService {
           return !activeLocations.contains(location);
         }
       });
-    cleaner.startAndWait();
+    cleaner.startAsync().awaitRunning();
     return cleaner;
   }
 
@@ -445,14 +451,14 @@ public final class YarnTwillRunnerService implements TwillRunnerService {
     // daemon threads.
     synchronized (this) {
       if (locationCacheCleaner != null) {
-        locationCacheCleaner.stopAndWait();
+        locationCacheCleaner.stopAsync().awaitTerminated();
       }
       if (secureStoreScheduler != null) {
         secureStoreScheduler.shutdownNow();
       }
     }
     watchCancellable.cancel();
-    zkClientService.stopAndWait();
+    zkClientService.stopAsync().awaitTerminated();
   }
 
   private Cancellable watchLiveApps() {
@@ -531,6 +537,11 @@ public final class YarnTwillRunnerService implements TwillRunnerService {
         synchronized (YarnTwillRunnerService.this) {
           Iterables.removeIf(controllers.values(), new Predicate<YarnTwillController>() {
             @Override
+            public boolean test(@Nullable YarnTwillController input) {
+              return false;
+            }
+
+            @Override
             public boolean apply(YarnTwillController input) {
               return input == controller;
             }
@@ -603,7 +614,7 @@ public final class YarnTwillRunnerService implements TwillRunnerService {
             YarnTwillController controller = listenController(
               new YarnTwillController(appName, runId, zkClient, amLiveNodeData, yarnAppClient));
             controllers.put(appName, runId, controller);
-            controller.start();
+            controller.startAsync().awaitRunning();
           }
         }
       }

@@ -23,11 +23,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
-import com.google.common.util.concurrent.AbstractService;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.Service;
+import com.google.common.util.concurrent.*;
 import org.apache.twill.common.Cancellable;
 import org.apache.twill.common.Threads;
 import org.apache.twill.zookeeper.ACLData;
@@ -52,12 +48,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nullable;
 
@@ -178,25 +169,25 @@ public final class DefaultZKClientService extends AbstractZKClient implements ZK
           public void onSuccess(String parentPath) {
             // Create the requested path again
             Futures.addCallback(
-              doCreate(path, data, createMode, false, acl, ignoreNodeExists), new FutureCallback<String>() {
-              @Override
-              public void onSuccess(String pathResult) {
-                result.set(pathResult);
-              }
+                    doCreate(path, data, createMode, false, acl, ignoreNodeExists), new FutureCallback<String>() {
+                      @Override
+                      public void onSuccess(String pathResult) {
+                        result.set(pathResult);
+                      }
 
-              @Override
-              public void onFailure(Throwable t) {
-                // handle the failure
-                updateFailureResult(t, result, path, ignoreNodeExists);
-              }
-            });
+                      @Override
+                      public void onFailure(Throwable t) {
+                        // handle the failure
+                        updateFailureResult(t, result, path, ignoreNodeExists);
+                      }
+                    }, MoreExecutors.directExecutor());
           }
 
           @Override
           public void onFailure(Throwable t) {
             result.setException(t);
           }
-        });
+        }, MoreExecutors.directExecutor());
       }
 
       /**
@@ -236,7 +227,7 @@ public final class DefaultZKClientService extends AbstractZKClient implements ZK
         String parentPath = path.substring(0, path.lastIndexOf('/'));
         return (parentPath.isEmpty() && !"/".equals(path)) ? "/" : parentPath;
       }
-    });
+    }, MoreExecutors.directExecutor());
 
     return result;
   }
@@ -302,13 +293,38 @@ public final class DefaultZKClientService extends AbstractZKClient implements ZK
   }
 
   @Override
-  public ListenableFuture<State> start() {
-    return serviceDelegate.start();
+  public Service startAsync() {
+    return serviceDelegate.startAsync();
   }
 
   @Override
-  public State startAndWait() {
-    return serviceDelegate.startAndWait();
+  public Service stopAsync() {
+    return serviceDelegate.stopAsync();
+  }
+
+  @Override
+  public void awaitRunning() {
+    serviceDelegate.awaitRunning();
+  }
+
+  @Override
+  public void awaitRunning(long l, TimeUnit timeUnit) throws TimeoutException {
+    serviceDelegate.awaitRunning(l, timeUnit);
+  }
+
+  @Override
+  public void awaitTerminated() {
+    serviceDelegate.awaitTerminated();
+  }
+
+  @Override
+  public void awaitTerminated(long l, TimeUnit timeUnit) throws TimeoutException {
+    serviceDelegate.awaitTerminated(l, timeUnit);
+  }
+
+  @Override
+  public Throwable failureCause() {
+    return serviceDelegate.failureCause();
   }
 
   @Override
@@ -319,16 +335,6 @@ public final class DefaultZKClientService extends AbstractZKClient implements ZK
   @Override
   public State state() {
     return serviceDelegate.state();
-  }
-
-  @Override
-  public ListenableFuture<State> stop() {
-    return serviceDelegate.stop();
-  }
-
-  @Override
-  public State stopAndWait() {
-    return serviceDelegate.stopAndWait();
   }
 
   @Override

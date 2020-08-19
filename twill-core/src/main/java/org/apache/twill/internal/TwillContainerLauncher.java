@@ -22,6 +22,7 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.Uninterruptibles;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -43,6 +44,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import javax.annotation.Nullable;
 
 /**
@@ -167,7 +169,8 @@ public final class TwillContainerLauncher {
 
     TwillContainerControllerImpl controller =
       new TwillContainerControllerImpl(zkClient, runId, runtimeSpec.getName(), instanceId, processController);
-    controller.start();
+    controller.startAsync();
+    controller.awaitRunning();
     return controller;
   }
 
@@ -206,6 +209,28 @@ public final class TwillContainerLauncher {
     @Override
     protected void doStartUp() {
       // No-op
+    }
+
+    @Override
+    public Service stopAsync() {
+      return null;
+    }
+
+    @Override
+    public void awaitRunning() {
+
+    }
+
+
+    @Override
+    public void awaitRunning(long l, TimeUnit timeUnit) throws TimeoutException {
+
+    }
+
+
+    @Override
+    public Throwable failureCause() {
+      return null;
     }
 
     @Override
@@ -290,9 +315,9 @@ public final class TwillContainerLauncher {
     }
 
     private void killAndWait(int maxWaitSecs) {
-      Stopwatch watch = new Stopwatch();
+      Stopwatch watch = Stopwatch.createUnstarted();
       watch.start();
-      while (watch.elapsedTime(TimeUnit.SECONDS) < maxWaitSecs) {
+      while (watch.elapsed(TimeUnit.SECONDS) < maxWaitSecs) {
         // Kill the application
         try {
           kill();
@@ -310,7 +335,7 @@ public final class TwillContainerLauncher {
 
       // Timeout reached, runnable has not stopped
       LOG.error("Failed to kill runnable {}, instance {} after {} seconds", runnable, instanceId,
-                watch.elapsedTime(TimeUnit.SECONDS));
+                watch.elapsed(TimeUnit.SECONDS));
       // TODO: should we throw exception here?
     }
   }

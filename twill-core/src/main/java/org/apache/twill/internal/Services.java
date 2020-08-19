@@ -22,9 +22,12 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.SettableFuture;
+import jdk.nashorn.internal.codegen.CompilerConstants;
 import org.apache.twill.common.Threads;
+import org.apache.twill.internal.utils.Utility;
 
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -103,7 +106,24 @@ public final class Services {
     SettableFuture<List<ListenableFuture<Service.State>>> resultFuture = SettableFuture.create();
     List<ListenableFuture<Service.State>> result = Lists.newArrayListWithCapacity(moreServices.length + 1);
 
-    ListenableFuture<Service.State> future = doStart ? firstService.start() : firstService.stop();
+    final Service tempService = firstService;
+    Callable<Service.State> tempCallable = doStart ? new Callable<Service.State>() {
+      @Override
+      public Service.State call() throws Exception {
+        Service service = tempService.startAsync();
+        tempService.awaitRunning();
+        return service.state();
+      }
+    }  : new Callable<Service.State>() {
+      @Override
+      public Service.State call() throws Exception {
+        Service service = tempService.stopAsync();
+        tempService.awaitTerminated();
+        return service.state();
+      }
+    };
+    ListenableFuture<Service.State> future = Utility.getListenableFutureFromService(tempCallable);
+
     future.addListener(createChainListener(future, moreServices, new AtomicInteger(0), result, resultFuture, doStart),
                        Threads.SAME_THREAD_EXECUTOR);
     return resultFuture;
@@ -129,7 +149,24 @@ public final class Services {
           resultFuture.set(result);
           return;
         }
-        ListenableFuture<Service.State> actionFuture = doStart ? services[nextIdx].start() : services[nextIdx].stop();
+        final Service tempService = services[nextIdx];
+        Callable<Service.State> tempCallable = doStart ? new Callable<Service.State>() {
+          @Override
+          public Service.State call() throws Exception {
+            Service service = tempService.startAsync();
+            tempService.awaitRunning();
+            return service.state();
+          }
+        }  : new Callable<Service.State>() {
+          @Override
+          public Service.State call() throws Exception {
+            Service service = tempService.stopAsync();
+            tempService.awaitTerminated();
+            return service.state();
+          }
+        };
+        ListenableFuture<Service.State> actionFuture = Utility.getListenableFutureFromService(tempCallable);
+
         actionFuture.addListener(createChainListener(actionFuture, services, idx, result, resultFuture, doStart),
                                  Threads.SAME_THREAD_EXECUTOR);
       }
