@@ -189,7 +189,13 @@
         <url>https://git-wip-us.apache.org/repos/asf?p=twill.git;a=summary</url>
         <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/twill.git</developerConnection>
     </scm>
-
+    <distributionManagement>
+        <repository>
+            <id>central</id>
+            <name>lib-release</name>
+            <url>http://artifacts.ggn.in.guavus.com:80/libs-release</url>
+        </repository>
+    </distributionManagement>
     <build>
         <pluginManagement>
             <plugins>
