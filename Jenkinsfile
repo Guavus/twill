@@ -54,7 +54,7 @@ pipeline {
                         script {
                             echo "Running Build"
 
-                            sh "mvn clean install -U   -Dgpg.skip=true -DskipTests=true -Drat.skip=true  -Dskip.solr_examples=true"
+                            sh "mvn clean install -U   -Dgpg.skip=true -DskipTests=true  -Dcheckstyle.skip=true -Drat.skip=true  -Dskip.solr_examples=true"
                         }
                     }
                 }
