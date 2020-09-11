@@ -11,7 +11,7 @@ pipeline {
 
     
     
-    SLACK_CHANNEL = 'jenkins-cdap-alerts'
+    SLACK_CHANNEL = 'twill-cdap-alerts'
     CHECKSTYLE_FILE = 'target/javastyle-result.xml'
     UNIT_RESULT = 'target/surefire-reports/*.xml'
     COBERTURA_REPORT = 'target/site/cobertura/coverage.xml'
@@ -80,10 +80,10 @@ pipeline {
     post {
        always {
             //Global Lib for Reports publishing
-            reports_alerts(env.CHECKSTYLE_FILE, env.UNIT_RESULT, env.COBERTURA_REPORT, env.ALLURE_REPORT, env.HTML_REPORT)
+            // reports_alerts(env.CHECKSTYLE_FILE, env.UNIT_RESULT, env.COBERTURA_REPORT, env.ALLURE_REPORT, env.HTML_REPORT)
  
             //Global Lib for post build actions eg: artifacts archive
-            postBuild(env.ARCHIVE_ZIP_PATH_JANUSGRAPH)
+            // postBuild(env.ARCHIVE_ZIP_PATH_JANUSGRAPH)
 
             //Global Lib for slack alerts
             slackalert(env.SLACK_CHANNEL)
